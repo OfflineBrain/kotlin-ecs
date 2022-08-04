@@ -17,7 +17,10 @@ interface Query {
     fun ECSManager.init()
 }
 
-open class BaseQuery(include: Set<KClass<out Component>>, exclude: Set<KClass<out Component>>) : Query {
+open class BaseQuery(
+    include: Set<KClass<out Component>> = emptySet(),
+    exclude: Set<KClass<out Component>> = emptySet()
+) : Query {
     protected val _entities = mutableSetOf<Entity>()
     override val entities: Set<Entity> = _entities
     override val include: Set<KClass<out Component>> = include.toSet()
@@ -49,6 +52,12 @@ open class BaseQuery(include: Set<KClass<out Component>>, exclude: Set<KClass<ou
 
 }
 
+fun Set<KClass<out Component>>.toInclusiveQuery(): Query =
+    BaseQuery(include = this)
+
+fun Set<KClass<out Component>>.toExclusiveQuery(): Query =
+    BaseQuery(exclude = this)
+
 interface MapQuery<T : Component> : Query {
     val map: Map<T, Entity>
     operator fun get(component: T): Entity?
@@ -57,8 +66,8 @@ interface MapQuery<T : Component> : Query {
 
 open class BaseMapQuery<T : Component>(
     private val key: KClass<T>,
-    include: Set<KClass<out Component>>,
-    exclude: Set<KClass<out Component>>,
+    include: Set<KClass<out Component>> = setOf(key),
+    exclude: Set<KClass<out Component>> = emptySet(),
 ) : BaseQuery(include, exclude), MapQuery<T> {
     private val _map = mutableMapOf<T, Entity>()
     override val map: Map<T, Entity> = _map
@@ -82,8 +91,10 @@ open class BaseMapQuery<T : Component>(
     }
 
     override fun forget(entity: Entity) {
-        super.forget(entity)
-        _map.remove(keyMapper?.get(entity))
+        if (entity in _entities) {
+            super.forget(entity)
+            _map.remove(keyMapper?.get(entity))
+        }
     }
 
 
@@ -105,8 +116,8 @@ interface MultimapQuery<T> : Query {
 
 open class BaseMultimapQuery<T : Component>(
     private val key: KClass<T>,
-    include: Set<KClass<out Component>>,
-    exclude: Set<KClass<out Component>>,
+    include: Set<KClass<out Component>> = setOf(key),
+    exclude: Set<KClass<out Component>> = emptySet(),
 ) : BaseQuery(include, exclude), MultimapQuery<T> {
     private val _map = mutableMapOf<T, MutableSet<Entity>>()
     override val map: Map<T, Set<Entity>> = _map
@@ -130,11 +141,13 @@ open class BaseMultimapQuery<T : Component>(
     }
 
     override fun forget(entity: Entity) {
-        super.forget(entity)
-        keyMapper?.let { keyMapper ->
-            val key = keyMapper[entity]
-            if (key != null) {
-                _map.getOrPut(key) { LinkedHashSet() }.remove(entity)
+        if (entity in _entities) {
+            super.forget(entity)
+            keyMapper?.let { keyMapper ->
+                val key = keyMapper[entity]
+                if (key != null) {
+                    _map.getOrPut(key) { LinkedHashSet() }.remove(entity)
+                }
             }
         }
     }

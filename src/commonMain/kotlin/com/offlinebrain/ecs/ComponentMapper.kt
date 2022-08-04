@@ -37,12 +37,12 @@ class ComponentMapper<C : Component> internal constructor(
 
     fun flush(notify: Boolean = false) {
         removeComponentQueue.forEach {
-            components.remove(it)
-            if (notify) entityManager.notify(it)
+            val removed = components.remove(it)
+            if (notify && removed != null) entityManager.notify(it, removed::class)
         }
         addComponentQueue.forEach {
             components[it.key] = it.value
-            if (notify) entityManager.notify(it.key)
+            if (notify) entityManager.notify(it.key, it.value::class)
         }
 
         addComponentQueue.clear()

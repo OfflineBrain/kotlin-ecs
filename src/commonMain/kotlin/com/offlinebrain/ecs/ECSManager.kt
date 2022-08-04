@@ -57,8 +57,8 @@ class ECSManager {
 
     fun get(id: Int): Entity? = entities.find { it == id }
 
-    fun notify(entity: Entity) {
-        queries.offer(entity)
+    fun notify(entity: Entity, vararg components: KClass<out Component>) {
+        queries.offer(entity, *components)
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -97,6 +97,15 @@ class ECSManager {
         entities.removeAll(entts.toSet())
     }
 
+
+    fun process(delta: Long) {
+        if (processing) return
+        processing = true
+        systems.forEach { it.process(delta) }
+        processing = false
+
+        componentMappers.values.forEach { it.flush(true) }
+    }
 }
 
 typealias Entity = Int

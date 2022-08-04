@@ -1,48 +1,31 @@
 plugins {
     kotlin("multiplatform") version "1.7.10"
+    id("maven-publish")
 }
 
 group = "com.offlinebrain"
-version = "0.1"
+version = "0.1.4"
 
 repositories {
     mavenCentral()
+    mavenLocal()
 }
 
 kotlin {
-    js(BOTH) {
-        browser {
-            commonWebpackConfig {
-                cssSupport.enabled = true
-            }
-        }
+    jvm()
+    js {
+        browser()
+        nodejs()
     }
+    mingwX64()
+    linuxX64()
 
-    jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = "1.8"
-        }
-        withJava()
-        testRuns["test"].executionTask.configure {
-            useJUnitPlatform()
-        }
-    }
-    mingwX64 {
-        binaries {
-            sharedLib {
-                baseName = "offlinebrain-ecs"
-            }
-        }
-    }
-    linuxX64 {
-        binaries {
-            sharedLib {
-                baseName = "offlinebrain-ecs"
-            }
-        }
-    }
     sourceSets {
-        val commonMain by getting
+        val commonMain by getting {
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.0-RC")
+            }
+        }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
