@@ -65,6 +65,15 @@ class ECSManager {
     fun <C : Component> Entity.get(type: KClass<C>): C? = componentMappers[type]?.get(this) as C?
     inline fun <reified C : Component> Entity.get(): C? = get(C::class)
 
+    @Suppress("UNCHECKED_CAST")
+    fun <C : Component> Entity.getNotNull(type: KClass<C>): C = componentMappers[type]?.get(this) as C
+    inline fun <reified C : Component> Entity.getNotNull(): C = getNotNull(C::class)
+
+    operator fun <C : Component> Entity.contains(type: KClass<C>): Boolean =
+        componentMappers[type]?.contains(this) ?: false
+
+    inline fun <reified C : Component> Entity.contains(): Boolean = C::class in this
+
     fun Entity.components(): Set<Component> = componentMappers.values.mapNotNull { it[this] }.toSet()
 
     @Suppress("UNCHECKED_CAST")
